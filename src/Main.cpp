@@ -1,16 +1,13 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-// Global Variables
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+#include "headers/constants.h"
+#include "headers/options.h"
 
 
 int main()
 {
-	// Initialize GLFW
-	if (!glfwInit())
-		return -1;
+	if (!glfwInit()) return -1;
 
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Eulerian Grid-Based Fluid Simulation", NULL, NULL);
 	if (!window)
@@ -18,14 +15,12 @@ int main()
 		glfwTerminate();
 		return -1;
 	}
-
 	glfwMakeContextCurrent(window);
-
-	// Initialize GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		return -1;
 
-	
+	// Instances
+	Options options;
 
 	// Main rendering loop
 	while (!glfwWindowShouldClose(window))
@@ -33,7 +28,7 @@ int main()
 		glClearColor(0.8f, 0.9f, 0.99f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-
+		options.processInput(window);
 
 
 		glfwSwapBuffers(window);

@@ -20,10 +20,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\ix.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\options.cpp" />
     <ClCompile Include="src\physics.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\headers\constants.h" />
+    <ClInclude Include="include\headers\ix.h" />
+    <ClInclude Include="include\headers\options.h" />
     <ClInclude Include="include\headers\physics.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

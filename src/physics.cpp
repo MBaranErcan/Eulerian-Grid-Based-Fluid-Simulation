@@ -1,8 +1,7 @@
 #include <cmath>
 
 #include "headers/physics.h"
-
-int IX(int x, int y, int N);
+#include "headers/ix.h"
 
 Physics::Physics() {}
 
@@ -44,6 +43,7 @@ void Physics::SetBoundary(int b, float* x, int N) {
 	x[IX(N - 1, 0, N)] = 0.5f * (x[IX(N - 2, 0, N)] + x[IX(N - 1, 1, N)]);
 	x[IX(N - 1, N - 1, N)] = 0.5f * (x[IX(N - 2, N - 1, N)] + x[IX(N - 1, N - 2, N)]);
 }
+
 
 void Physics::Diffuse(int b, float* x, float* x0, float diff, float dt, int iter, int N) {
 	float a = dt * diff * (N - 2) * (N - 2);
@@ -120,8 +120,4 @@ void Physics::Project(float* u, float* v, float* p, float* div, int iter, int N)
 	}
 	SetBoundary(1, u, N);
 	SetBoundary(2, v, N);
-}
-
-int IX(int x, int y, int N) {
-		return x + y * N;
 }
