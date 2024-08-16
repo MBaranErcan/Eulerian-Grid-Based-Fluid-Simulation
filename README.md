@@ -8,11 +8,9 @@ The simulation includes key components such as diffusion, advection, and project
 
 Features
 
-•	Linear Solver: Utilizes Gauss-Seidel relaxation for solving linear systems.
-
 •	Boundary Conditions: Handles boundary conditions for velocity and scalar fields.
 
-•	Diffusion: Simulates the spreading of substances within the fluid.
+•	Diffusion: Simulates the spreading of substances within the fluid using Gauss-Seidel relaxation.
 
 •	Advection: Transports quantities like velocity and density through the fluid.
 
