@@ -5,12 +5,10 @@
 // Non-functional class, will be implemented in the future to add options to the simulator.
 class Options
 {
-private:
-
 public:
-	Options();
-	~Options();
+    Options();
+    ~Options();
 
-	void setOptions();
-	void processInput(GLFWwindow* window);
+    void setOptions();
+    void processInput(GLFWwindow* window);
 };

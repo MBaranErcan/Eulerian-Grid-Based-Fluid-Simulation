@@ -1,8 +1,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "headers/constants.h"
-#include "headers/options.h"
+#include "headers/Shader.h"
+#include "headers/Constants.h"
+#include "headers/Options.h"
 
 
 int main()
@@ -19,8 +20,14 @@ int main()
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		return -1;
 
-	// Instances
+	// Class Instances
 	Options options;
+
+
+	// Shader
+	Shader shader("shaders/shader.vert", "shaders/shader.frag");
+	shader.use();
+
 
 	// Main rendering loop
 	while (!glfwWindowShouldClose(window))
@@ -29,6 +36,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		options.processInput(window);
+
 
 
 		glfwSwapBuffers(window);

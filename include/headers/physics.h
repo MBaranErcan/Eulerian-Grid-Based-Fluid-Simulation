@@ -1,19 +1,31 @@
 #pragma once
 
+#include "headers/Constants.h"
+
+#include <vector>
+
 class Physics
 {
 private:
-	// Linear solver: Gauss-Seidel relaxation
-	void LinSolve(int b, float* x, float* x0, float a, float c, int iter, int N);
+	
+	static float u[SIZE], v[SIZE], u_prev[SIZE], v_prev[SIZE];
+	static float dens[SIZE], dens_prev[SIZE], s[SIZE];
 
-	// Set boundary conditions
-	void SetBoundary(int b, float* x, int N);
 
 public:
 	Physics();
+	Physics(float u[SIZE], float v[SIZE], float u_prev[SIZE], float v_prev[SIZE]);
 	~Physics();
 
-	void Diffuse(int b, float* x, float* x0, float diff, float dt, int iter, int N);
-	void Advect(int b, float* d, float* d0, float* u, float* v, float dt, int N);
-	void Project(float* u, float* v, float* p, float* div, int iter, int N);
+	void diffuse(int N, int b, float* x, float* x0, float diff, int ITERS, float dt);
+	void advect(int N, int b, float* d, float* d0, float* u, float* v, float dt);
+	void project(int N, float* u, float* v, float* p, float* div);
+
+	void add_source(int N, float* x, float* s, float dt);
+	void set_bnd(int N, int b, float* x);
+
+	void dens_step(int N, float* x, float* x0, float* u, float* v, float diff, int ITERS, float dt);
+	void vel_step(int N, float* u, float* v, float* u0, float* v0, float visc, float dt);
+	void draw_dens(int N, float* dens);
+
 };

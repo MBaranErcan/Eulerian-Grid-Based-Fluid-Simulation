@@ -1,123 +1,155 @@
-#include <cmath>
+#pragma once
 
-#include "headers/physics.h"
-#include "headers/ix.h"
+#include "headers/Physics.h"
+
+float Physics::u[SIZE] = { 0 };
+float Physics::v[SIZE] = { 0 };
+float Physics::u_prev[SIZE] = { 0 };
+float Physics::v_prev[SIZE] = { 0 };
+float Physics::dens[SIZE] = { 0 };
+float Physics::dens_prev[SIZE] = { 0 };
+float Physics::s[SIZE] = { 0 };
+
+/*--------------------------
+  Constructor and Destructor
+---------------------------*/
 
 Physics::Physics() {}
 
 Physics::~Physics() {}
 
-void Physics::LinSolve(int b, float* x, float* x0, float a, float c, int iter, int N) {
-	float cRecip = 1.0 / c;
-	for (int k = 0; k < iter; k++) {
-		for (int j = 1; j < N - 1; j++) {
-			for (int i = 1; i < N - 1; i++) {
-				x[IX(i, j, N)] =
-					(x0[IX(i, j, N)]
-					+ a * (x[IX(i + 1, j, N)]	// Right
-					+ x[IX(i - 1, j, N)]		// Left
-					+ x[IX(i, j + 1, N)]		// Top
-					+ x[IX(i, j - 1, N)]		// Bottom
-					)) * cRecip;
+
+/*-----------------------
+  Diffuse-Advect-Project
+-----------------------*/
+
+// Gauss-Seidel relaxation
+void Physics::diffuse (int N, int b, float* x, float* x0, float diff, int ITERS, float dt)
+{
+	int i, j, k;
+	float a = dt * diff * (N * N);
+
+	for (k = 0; k < ITERS; k++) {
+		for (i = 1; i <= N; i++) {
+			for (j = 1; j <= N; j++)
+			{
+				x[IX(i, j)] = (x0[IX(i, j)] + a
+					* (x[IX(i - 1, j)] + x[IX(i + 1, j)] + x[IX(i, j - 1)] + x[IX(i, j + 1)])) / (1 + (4 * a));
 			}
 		}
-		SetBoundary(b, x, N);
+		set_bnd(N, b, x);
 	}
 }
 
-void Physics::SetBoundary(int b, float* x, int N) {
-	// Top and Bottom
-	for (int i = 1; i < N - 1; i++) {
-		x[IX(i, 0, N)] = b == 2 ? -x[IX(i, 1, N)] : x[IX(i, 1, N)];
-		x[IX(i, N - 1, N)] = b == 2 ? -x[IX(i, N - 2, N)] : x[IX(i, N - 2, N)];
+void Physics::advect(int N, int b, float* d, float* d0, float* u, float* v, float dt)
+{
+	int i, j, i0, j0, i1, j1;
+	float x, y, s0, t0, s1, t1, dt0;
+
+	dt0 = dt * N;
+
+	for (i = 1; i <= N; i++) {
+		for (j = 1; j <= N; j++) {
+			x = i - dt0 * u[IX(i, j)]; // x and y represent the new position in the grid
+			y = j - dt0 * v[IX(i, j)];
+
+			// i0, i1, j0, j1 are the four corners of the cell
+			if (x < 0.5) x = 0.5;	if (x > N + 0.5) x = N + 0.5;	i0 = (int)x;	i1 = i0 + 1;
+			if (y < 0.5) y = 0.5;	if (y > N + 0.5) y = N + 0.5;	j0 = (int)y;	j1 = j0 + 1;
+
+			s1 = x - i0;	s0 = 1 - s1;	t1 = y - j0;	t0 = 1 - t1; // how far are we from the corners
+
+			d[IX(i, j)] = s0 * (t0 * d0[IX(i0, j0)] + t1 * d0[IX(i0, j1)]) +	// Bilinear interpolation
+				s1 * (t0 * d0[IX(i1, j0)] + t1 * d0[IX(i1, j1)]);
+		}
 	}
-	// Left and Right
-	for (int j = 1; j < N - 1; j++) {
-		x[IX(0, j, N)] = b == 1 ? -x[IX(1, j, N)] : x[IX(1, j, N)];
-		x[IX(N - 1, j, N)] = b == 1 ? -x[IX(N - 2, j, N)] : x[IX(N - 2, j, N)];
+	set_bnd(N, b, d);
+}
+
+void Physics::project(int N, float* u, float* v, float* p, float* div) // p is pressure, div is divergence
+{
+	int i, j, k;
+
+	for (i = 1; i <= N; i++) {
+		for (j = 1; j <= N; j++) {
+			div[IX(i, j)] = -0.5f * h * (u[IX(i + 1, j)] - u[IX(i - 1, j)] + v[IX(i, j + 1)] - v[IX(i, j - 1)]);
+
+			p[IX(i, j)] = 0;
+		}
+	}
+	set_bnd(N, 0, div);	set_bnd(N, 0, p);
+
+	for (k = 0; k < ITERS; k++) {
+		for (i = 1; i <= N; i++) {
+			for (j = 1; j <= N; j++) {
+				p[IX(i, j)] = (div[IX(i, j)] + p[IX(i - 1, j)] + p[IX(i + 1, j)] + p[IX(i, j - 1)] + p[IX(i, j + 1)]) / 4;
+			}
+		}
+		set_bnd(N, 0, p);
 	}
 
+	for (i = 1; i <= N; i++) {
+		for (j = 1; j <= N; j++) {
+			u[IX(i, j)] -= 0.5 * (p[IX(i + 1, j)] - p[IX(i - 1, j)]) / h;
+			v[IX(i, j)] -= 0.5 * (p[IX(i, j + 1)] - p[IX(i, j - 1)]) / h;
+		}
+	}
+	set_bnd(N, 1, u);	set_bnd(N, 2, v);
+}
+
+
+/*-------------------------------------
+Update the fluid (density and velocity)
+-------------------------------------*/
+
+void Physics::dens_step (int N, float* x, float* x0, float* u, float* v, float diff, int ITERS, float dt)
+{
+	add_source(N, x, s, dt);							// External inputs
+	SWAP(x0, x); diffuse(N, 0, x, x0, diff, ITERS, dt);	// Diffusion
+	SWAP(x0, x); advect(N, 0, x, x0, u, v, dt);			// Advection
+}
+
+// Update velocity field of the fluid
+void Physics::vel_step (int N, float* u, float* v, float* u0, float* v0, float visc, float dt)
+{
+	add_source(N, u, u0, dt); add_source(N, v, v0, dt);	// External inputs
+	SWAP(u0, u); diffuse(N, 1, u, u0, visc, 4, dt);	// Diffusion
+	SWAP(v0, v); diffuse(N, 2, v, v0, visc, 4, dt);	// Diffusion
+	project(N, u, v, u0, v0);							// Projection
+	SWAP(u0, u); SWAP(v0, v);
+	advect(N, 1, u, u0, u0, v0, dt);					// Advection
+	advect(N, 2, v, v0, u0, v0, dt);					// Advection
+	project(N, u, v, u0, v0);							// Projection
+}	// we call project twice beacause advect() behaves more accurately when the velocity field is divergence-free
+
+
+// Add user input to the density field
+void Physics::add_source(int N, float* x, float* s, float dt)
+{
+	int size = (N + 2) * (N + 2);
+	for (int i = 0; i < size; i++) x[i] += dt * s[i];
+}
+
+// Horizontal velocity on vertical walls, vertical velocity on horizontal walls is 0
+void Physics::set_bnd(int N, int b, float* x)
+{
+	int i;
+
+	for (i = 1; i <= N; i++) {
+		x[IX(0, i)] = b == 1 ? -x[IX(1, i)] : x[IX(1, i)];
+		x[IX(N + 1, i)] = b == 1 ? -x[IX(N, i)] : x[IX(N, i)];
+		x[IX(i, 0)] = b == 2 ? -x[IX(i, 1)] : x[IX(i, 1)];
+		x[IX(i, N + 1)] = b == 2 ? -x[IX(i, N)] : x[IX(i, N)];
+	}
 	// Corners
-	x[IX(0, 0, N)] = 0.5f * (x[IX(1, 0, N)] + x[IX(0, 1, N)]);
-	x[IX(0, N - 1, N)] = 0.5f * (x[IX(1, N - 1, N)] + x[IX(0, N - 2, N)]);
-	x[IX(N - 1, 0, N)] = 0.5f * (x[IX(N - 2, 0, N)] + x[IX(N - 1, 1, N)]);
-	x[IX(N - 1, N - 1, N)] = 0.5f * (x[IX(N - 2, N - 1, N)] + x[IX(N - 1, N - 2, N)]);
+	x[IX(0, 0)] = 0.5f * (x[IX(1, 0)] + x[IX(0, 1)]);
+	x[IX(0, N + 1)] = 0.5f * (x[IX(1, N + 1)] + x[IX(0, N)]);
+	x[IX(N + 1, 0)] = 0.5f * (x[IX(N, 0)] + x[IX(N + 1, 1)]);
+	x[IX(N + 1, N + 1)] = 0.5f * (x[IX(N, N + 1)] + x[IX(N + 1, N)]);
 }
 
+// Draw the density field
+void Physics::draw_dens(int N, float* dens)
+{
 
-void Physics::Diffuse(int b, float* x, float* x0, float diff, float dt, int iter, int N) {
-	float a = dt * diff * (N - 2) * (N - 2);
-	LinSolve(b, x, x0, a, 1 + 6 * a, iter, N);
-}
-
-void Physics::Advect(int b, float* d, float* d0, float* u, float* v, float dt, int N) {
-	float i0, i1, j0, j1;
-
-	float dtx = dt * (N - 2);
-	float dty = dt * (N - 2);
-
-	float s0, s1, t0, t1;
-	float tmp1, tmp2, x, y;
-
-	float Nfloat = N;
-	float ifloat, jfloat;
-	int i, j;
-
-	for (j = 1, jfloat = 1; j < N - 1; j++, jfloat++) {
-		for (i = 1, ifloat = 1; i < N - 1; i++, ifloat++) {
-			tmp1 = dtx * u[IX(i, j, N)];
-			tmp2 = dty * v[IX(i, j, N)];
-			x = ifloat - tmp1;
-			y = jfloat - tmp2;
-
-			if (x < 0.5f) x = 0.5f;
-			if (x > Nfloat + 0.5f) x = Nfloat + 0.5f;
-			i0 = floor(x);
-			i1 = i0 + 1.0f;
-			if (y < 0.5f) y = 0.5f;
-			if (y > Nfloat + 0.5f) y = Nfloat + 0.5f;
-			j0 = floor(y);
-			j1 = j0 + 1.0f;
-
-			s1 = x - i0;
-			s0 = 1.0f - s1;
-			t1 = y - j0;
-			t0 = 1.0f - t1;
-
-			int i0i = i0;
-			int i1i = i1;
-			int j0i = j0;
-			int j1i = j1;
-
-			d[IX(i, j, N)] =
-				s0 * (t0 * d0[IX(i0i, j0i, N)] + t1 * d0[IX(i0i, j1i, N)]) +
-				s1 * (t0 * d0[IX(i1i, j0i, N)] + t1 * d0[IX(i1i, j1i, N)]);
-		}
-	}
-}
-
-void Physics::Project(float* u, float* v, float* p, float* div, int iter, int N) {
-	for (int j = 1; j < N - 1; j++) {
-		for (int i = 1; i < N - 1; i++) {
-			div[IX(i, j, N)] = -0.5f * (
-				u[IX(i + 1, j, N)]
-			  - u[IX(i - 1, j, N)]
-			  + v[IX(i, j + 1, N)]
-			  - v[IX(i, j - 1, N)]
-			) / N;
-			p[IX(i, j, N)] = 0;
-		}
-	}
-	SetBoundary(0, div, N);
-	SetBoundary(0, p, N);
-	LinSolve(0, p, div, 1, 6, iter, N);
-
-	for (int j = 1; j < N - 1; j++) {
-		for (int i = 1; i < N - 1; i++) {
-			u[IX(i, j, N)] -= 0.5f * N * (p[IX(i + 1, j, N)] - p[IX(i - 1, j, N)]);
-			v[IX(i, j, N)] -= 0.5f * N * (p[IX(i, j + 1, N)] - p[IX(i, j - 1, N)]);
-		}
-	}
-	SetBoundary(1, u, N);
-	SetBoundary(2, v, N);
 }

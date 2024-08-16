@@ -1,17 +1,13 @@
-#include "headers/options.h"
+#include "headers/Options.h"
 
-Options::Options(){}
-Options::~Options(){}
-
+Options::Options() {}
+Options::~Options() {}
 
 void Options::setOptions() {
-	;
+	// Placeholder for future implementation
 }
 
-
-// Process User Input
-void Options::processInput(GLFWwindow* window)
-{
+void Options::processInput(GLFWwindow* window) {
 	// Close window (ESC)
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
