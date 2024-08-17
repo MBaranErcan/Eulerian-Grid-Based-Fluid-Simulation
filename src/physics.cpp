@@ -102,6 +102,12 @@ void Physics::project(int N, float* u, float* v, float* p, float* div) // p is p
 Update the fluid (density and velocity)
 -------------------------------------*/
 
+void Physics::step(float dt)
+{
+	vel_step(N, u, v, u_prev, v_prev, visc, dt);
+	dens_step(N, dens, dens_prev, u, v, diff, 4, dt);
+}
+
 void Physics::dens_step (int N, float* x, float* x0, float* u, float* v, float diff, int ITERS, float dt)
 {
 	add_source(N, x, s, dt);							// External inputs
@@ -113,14 +119,21 @@ void Physics::dens_step (int N, float* x, float* x0, float* u, float* v, float d
 void Physics::vel_step (int N, float* u, float* v, float* u0, float* v0, float visc, float dt)
 {
 	add_source(N, u, u0, dt); add_source(N, v, v0, dt);	// External inputs
-	SWAP(u0, u); diffuse(N, 1, u, u0, visc, 4, dt);	// Diffusion
-	SWAP(v0, v); diffuse(N, 2, v, v0, visc, 4, dt);	// Diffusion
+	SWAP(u0, u); diffuse(N, 1, u, u0, visc, 4, dt);		// Diffusion
+	SWAP(v0, v); diffuse(N, 2, v, v0, visc, 4, dt);		// Diffusion
 	project(N, u, v, u0, v0);							// Projection
 	SWAP(u0, u); SWAP(v0, v);
 	advect(N, 1, u, u0, u0, v0, dt);					// Advection
 	advect(N, 2, v, v0, u0, v0, dt);					// Advection
 	project(N, u, v, u0, v0);							// Projection
+	for (int i = 0; i < SIZE; i++) {
+		u[i] *= decay;
+		v[i] *= decay;
+	}
+
+
 }	// we call project twice beacause advect() behaves more accurately when the velocity field is divergence-free
+
 
 
 // Add user input to the density field
@@ -146,10 +159,4 @@ void Physics::set_bnd(int N, int b, float* x)
 	x[IX(0, N + 1)] = 0.5f * (x[IX(1, N + 1)] + x[IX(0, N)]);
 	x[IX(N + 1, 0)] = 0.5f * (x[IX(N, 0)] + x[IX(N + 1, 1)]);
 	x[IX(N + 1, N + 1)] = 0.5f * (x[IX(N, N + 1)] + x[IX(N + 1, N)]);
-}
-
-// Draw the density field
-void Physics::draw_dens(int N, float* dens)
-{
-
 }

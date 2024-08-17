@@ -6,16 +6,13 @@
 
 class Physics
 {
-private:
-	
-	static float u[SIZE], v[SIZE], u_prev[SIZE], v_prev[SIZE];
-	static float dens[SIZE], dens_prev[SIZE], s[SIZE];
-
-
 public:
 	Physics();
-	Physics(float u[SIZE], float v[SIZE], float u_prev[SIZE], float v_prev[SIZE]);
 	~Physics();
+
+	static float dens[SIZE], dens_prev[SIZE], s[SIZE];
+	static float u[SIZE], v[SIZE], u_prev[SIZE], v_prev[SIZE];
+
 
 	void diffuse(int N, int b, float* x, float* x0, float diff, int ITERS, float dt);
 	void advect(int N, int b, float* d, float* d0, float* u, float* v, float dt);
@@ -26,6 +23,7 @@ public:
 
 	void dens_step(int N, float* x, float* x0, float* u, float* v, float diff, int ITERS, float dt);
 	void vel_step(int N, float* u, float* v, float* u0, float* v0, float visc, float dt);
-	void draw_dens(int N, float* dens);
+
+	void step(float dt);
 
 };
