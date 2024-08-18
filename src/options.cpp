@@ -41,6 +41,11 @@ void Options::key_callback(GLFWwindow* window, int key, int scancode, int action
 		isWireframe = !isWireframe;
 		glPolygonMode(GL_FRONT_AND_BACK, isWireframe ? GL_LINE : GL_FILL);
 	}
+
+    // Reset the grid ('R')
+    if (key == GLFW_KEY_R && action == GLFW_RELEASE) {
+        physics.reset();
+    }
 }
 
 void Options::mouse_callback(GLFWwindow* window, double xpos, double ypos)
@@ -65,6 +70,7 @@ void Options::mouse_callback(GLFWwindow* window, double xpos, double ypos)
     // 1: left border, N: right border
     if (gridX >= 1 && gridX <= N && gridY >= 1 && gridY <= N)
     {
+        // Add fluid velocity (Left Click + Drag)
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
         {
             for (int i = -addRadius; i <= addRadius; ++i)
@@ -90,6 +96,7 @@ void Options::mouse_callback(GLFWwindow* window, double xpos, double ypos)
                 }
             }
         }
+        // Add fluid density (Right Click + Drag)
         else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
         {
             for (int i = -addRadius; i <= addRadius; ++i)
@@ -111,6 +118,28 @@ void Options::mouse_callback(GLFWwindow* window, double xpos, double ypos)
                 }
             }
         }
+        // Add fluid density source (Middle Click)
+        else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) {
+            for (int i = -addRadius; i <= addRadius; ++i)
+            {
+                for (int j = -addRadius; j <= addRadius; ++j)
+                {
+                    int neighborX = gridX + i;
+					int neighborY = gridY + j;
+                    if (neighborX >= 1 && neighborX <= N && neighborY >= 1 && neighborY <= N)
+                    {
+                        // Check if the neighbor is within the circular radius
+                        if (sqrt(i * i + j * j) <= addRadius)
+                        {
+                            int neighborIndex = IX(neighborX, neighborY);
+                            physics.s[neighborIndex] += 1;
+                            physics.s[neighborIndex] = std::min(physics.s[neighborIndex], 1.0f);
+                        }
+                    }
+                }
+            }
+		}
+
     }
     lastX = xpos;
     lastY = ypos;

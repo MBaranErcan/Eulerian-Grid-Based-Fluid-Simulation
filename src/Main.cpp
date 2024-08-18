@@ -8,9 +8,14 @@
 #include "headers/Shader.h"
 #include "headers/Constants.h"
 #include "headers/Options.h"
+#include "headers/Physics.h"
 
+
+// Physics
+Physics physics;
 
 // Time step
+float dt = 0.0f;
 float lastFrame = 0.0f;
 
 
@@ -47,9 +52,6 @@ int main()
 	shader.use();
 
 
-	// Physics
-	Physics physics;
-
 	float quadVertices[] = {
 		// positions
 		0.0f, 0.0f, // bottom-left
@@ -85,7 +87,7 @@ int main()
 		// Physics step
 		physics.step(dt);
 
-		int i,j, index;
+		int i, j, index;
 		for (j = 1; j <= N; j++)
 		{
 			for (i = 1; i <= N; i++)
@@ -98,8 +100,8 @@ int main()
 				glUniform1f(glGetUniformLocation(shader.ID, "density"), physics.dens[index]);
 
 				glm::mat4 model = glm::mat4(1.0f);
-				model = glm::translate(model, glm::vec3(x-0.5f, y-0.5f, 0.0f));
-				model = glm::scale(model, glm::vec3(1.0f/N, 1.0f/N, 1.0f));
+				model = glm::translate(model, glm::vec3(2.0f * x - 1.0f, 2.0f * y - 1.0f, 0.0f));
+				model = glm::scale(model, glm::vec3(2.0f / N, 2.0f / N, 1.0f));
 				glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 				glDrawArrays(GL_TRIANGLES, 0, 6);

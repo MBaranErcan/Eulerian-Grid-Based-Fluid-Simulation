@@ -130,17 +130,29 @@ void Physics::vel_step (int N, float* u, float* v, float* u0, float* v0, float v
 		u[i] *= decay;
 		v[i] *= decay;
 	}
-
-
 }	// we call project twice beacause advect() behaves more accurately when the velocity field is divergence-free
 
+void Physics::reset()
+{
+	int i, j;
+	for (i = 0; i < N; i++) {
+		for (j = 0; j < N; j++) {
+			u[IX(i, j)] = 0;
+			v[IX(i, j)] = 0;
+			u_prev[IX(i, j)] = 0;
+			v_prev[IX(i, j)] = 0;
+			dens[IX(i, j)] = 0;
+			dens_prev[IX(i, j)] = 0;
+			s[IX(i, j)] = 0;
+		}
+	}
+}
 
 
 // Add user input to the density field
 void Physics::add_source(int N, float* x, float* s, float dt)
 {
-	int size = (N + 2) * (N + 2);
-	for (int i = 0; i < size; i++) x[i] += dt * s[i];
+	for (int i = 0; i < SIZE; i++) x[i] += dt * s[i];
 }
 
 // Horizontal velocity on vertical walls, vertical velocity on horizontal walls is 0
