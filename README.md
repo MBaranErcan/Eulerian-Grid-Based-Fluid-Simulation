@@ -4,6 +4,10 @@ This project implements a 2D Eulerian grid-based fluid simulation using Computat
 
 The simulation includes key components such as diffusion, advection, and projection to solve the Navier-Stokes equations for incompressible fluid flow.
 
+
+![demo](https://github.com/user-attachments/assets/fbd215e9-9994-4f12-89e9-bfddd53d346c)
+
+
 ---
 
 ## Features
